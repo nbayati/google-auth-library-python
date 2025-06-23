@@ -111,13 +111,6 @@ class Credentials(
                 credentials.
         """
         try:
-            # If the service account email is 'default', we need to get the
-            # actual email address from the metadata server to build the
-            # trust boundary lookup URL. We only need to do this once.
-            if self._service_account_email == "default":
-                info = _metadata.get_service_account_info(request, "default")
-                self._service_account_email = info["email"]
-
             scopes = self._scopes if self._scopes is not None else self._default_scopes
             self.token, self.expiry = _metadata.get_service_account_token(
                 request, service_account=self._service_account_email, scopes=scopes
@@ -129,15 +122,23 @@ class Credentials(
         self._refresh_trust_boundary(request)
 
     def _build_trust_boundary_lookup_url(self):
-        """Builds and returns the URL for the trust boundary lookup API for GCE.
+        """Builds and returns the URL for the trust boundary lookup API for GCE."""
+        # If the service account email is 'default', we need to get the
+        # actual email address from the metadata server. This makes this method
+        # self-sufficient, similar to the `universe_domain` property.
+        if self._service_account_email == "default":
+            from google.auth.transport import requests as google_auth_requests
 
-        Returns:
-            str: The URL for the trust boundary lookup endpoint.
-        """
-        if not self.service_account_email or self.service_account_email == "default":
-            raise exceptions.InvalidOperation(
-                "The service account email is not available. Please call refresh() first."
-            )
+            request = google_auth_requests.Request()
+            try:
+                info = _metadata.get_service_account_info(request, "default")
+                # Cache the fetched email so we don't have to do this again.
+                self._service_account_email = info["email"]
+            except exceptions.TransportError:
+                # If we can't fetch the email, we can't build the URL.
+                # The refresh will likely fail later anyway, but we return None
+                # here to indicate failure to build the URL.
+                return None
 
         return _TRUST_BOUNDARY_LOOKUP_ENDPOINT.format(
             self.universe_domain, self.service_account_email
@@ -216,6 +217,19 @@ class Credentials(
             trust_boundary=self._trust_boundary,
             universe_domain=universe_domain,
         )
+
+    @_helpers.copy_docstring(credentials.CredentialsWithTrustBoundary)
+    def with_trust_boundary(self, trust_boundary):
+        creds = self.__class__(
+            service_account_email=self._service_account_email,
+            quota_project_id=self._quota_project_id,
+            scopes=self._scopes,
+            default_scopes=self._default_scopes,
+            trust_boundary=trust_boundary,
+        )
+        creds._universe_domain = self._universe_domain
+        creds._universe_domain_cached = self._universe_domain_cached
+        return creds
 
 
 _DEFAULT_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
