@@ -70,13 +70,13 @@ def get_agent_identity_certificate_path():
         google.auth.exceptions.RefreshError: If the certificate config file
             or the certificate file cannot be found after retries.
     """
-    _LOGGER.info("negarbDebugging - info")
+    _LOGGER.error("negarbDebugging - error")
     _LOGGER.debug("negarbDebugging - debug")
     _LOGGER.warning("negarbDebugging - warning")
     import json
 
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
-    _LOGGER.info("negarbDebugging - info", cert_config_path)
+    _LOGGER.error("negarbDebugging - error", cert_config_path)
     _LOGGER.debug("negarbDebugging - debug", cert_config_path)
     _LOGGER.warning("negarbDebugging - warning", cert_config_path)
     if not cert_config_path:
@@ -92,30 +92,20 @@ def get_agent_identity_certificate_path():
                     .get("workload", {})
                     .get("cert_path")
                 )
-                _LOGGER.info("negarbDebugging - info", cert_path)
+                _LOGGER.error("negarbDebugging - error", cert_path)
                 _LOGGER.debug("negarbDebugging - debug", cert_path)
                 _LOGGER.warning("negarbDebugging - warning", cert_path)
                 if cert_path and os.path.exists(cert_path):
                     return cert_path
                 else:
-                    _LOGGER.info(
-                        "negarbDebugging - info something wrong",
-                        cert_path,
-                        os.path.exists(cert_path),
-                    )
-                    _LOGGER.debug(
-                        "negarbDebugging - debug something wrong",
-                        cert_path,
-                        os.path.exists(cert_path),
-                    )
-                    _LOGGER.warning(
-                        "negarbDebugging - warning something wrong",
+                    _LOGGER.error(
+                        "negarbDebugging - error something wrong",
                         cert_path,
                         os.path.exists(cert_path),
                     )
         except (IOError, ValueError, KeyError):
             if not has_logged_warning:
-                _LOGGER.warning(
+                _LOGGER.error(
                     "negarbDebugging Certificate config file not found at %s (from %s environment "
                     "variable). Retrying for up to %s seconds.",
                     cert_config_path,
@@ -136,10 +126,9 @@ def get_agent_identity_certificate_path():
         " negarbDebugging Certificate config or certificate file not found after multiple retries. "
         f"Token binding protection is failing. You can turn off this protection by setting "
         f"{environment_vars.GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES} to false "
-        "to fall back to unbound tokens."
-        f"{cert_config_path}"
+        "to fall back to unbound tokens. "
         "Value of environment_vars.GOOGLE_API_CERTIFICATE_CONFIG was "
-        f"{environment_vars.GOOGLE_API_CERTIFICATE_CONFIG} "
+        f"{cert_config_path}"
     )
 
 
