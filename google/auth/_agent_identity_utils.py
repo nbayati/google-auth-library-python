@@ -43,7 +43,7 @@ _AGENT_IDENTITY_SPIFFE_TRUST_DOMAIN_PATTERNS = [
 _FAST_POLL_CYCLES = 50
 _FAST_POLL_INTERVAL = 0.1  # 100ms
 _SLOW_POLL_INTERVAL = 0.5  # 500ms
-_TOTAL_TIMEOUT = 30  # seconds
+_TOTAL_TIMEOUT = 120  # seconds
 
 # Calculate the number of slow poll cycles based on the total timeout.
 _SLOW_POLL_CYCLES = int(
@@ -70,15 +70,11 @@ def get_agent_identity_certificate_path():
         google.auth.exceptions.RefreshError: If the certificate config file
             or the certificate file cannot be found after retries.
     """
-    _LOGGER.error("negarbDebugging - error")
-    _LOGGER.debug("negarbDebugging - debug")
-    _LOGGER.warning("negarbDebugging - warning")
+    print("negarbDebugging - in get_agent_identity_certificate_path")
     import json
 
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
-    _LOGGER.error("negarbDebugging - error", cert_config_path)
-    _LOGGER.debug("negarbDebugging - debug", cert_config_path)
-    _LOGGER.warning("negarbDebugging - warning", cert_config_path)
+    print("negarbDebugging - cert config path: ", cert_config_path)
     if not cert_config_path:
         return None
 
@@ -92,20 +88,18 @@ def get_agent_identity_certificate_path():
                     .get("workload", {})
                     .get("cert_path")
                 )
-                _LOGGER.error("negarbDebugging - error", cert_path)
-                _LOGGER.debug("negarbDebugging - debug", cert_path)
-                _LOGGER.warning("negarbDebugging - warning", cert_path)
                 if cert_path and os.path.exists(cert_path):
+                    print("negarbDebugging found the file!")
                     return cert_path
                 else:
-                    _LOGGER.error(
+                    print(
                         "negarbDebugging - error something wrong",
                         cert_path,
                         os.path.exists(cert_path),
                     )
         except (IOError, ValueError, KeyError):
             if not has_logged_warning:
-                _LOGGER.error(
+                print(
                     "negarbDebugging Certificate config file not found at %s (from %s environment "
                     "variable). Retrying for up to %s seconds.",
                     cert_config_path,
