@@ -70,14 +70,19 @@ def get_agent_identity_certificate_path():
         google.auth.exceptions.RefreshError: If the certificate config file
             or the certificate file cannot be found after retries.
     """
+    _LOGGER.info("negarb - info")
+    _LOGGER.debug("negarb - debug")
+    _LOGGER.warning("negarb - warning")
     import json
 
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
+    _LOGGER.info("negarb - info", cert_config_path)
+    _LOGGER.debug("negarb - debug", cert_config_path)
+    _LOGGER.warning("negarb - warning", cert_config_path)
     if not cert_config_path:
         return None
 
     has_logged_warning = False
-
     for interval in _POLLING_INTERVALS:
         try:
             with open(cert_config_path, "r") as f:
@@ -87,8 +92,27 @@ def get_agent_identity_certificate_path():
                     .get("workload", {})
                     .get("cert_path")
                 )
+                _LOGGER.info("negarb - info", cert_path)
+                _LOGGER.debug("negarb - debug", cert_path)
+                _LOGGER.warning("negarb - warning", cert_path)
                 if cert_path and os.path.exists(cert_path):
                     return cert_path
+                else:
+                    _LOGGER.info(
+                        "negarb - info something wrong",
+                        cert_path,
+                        os.path.exists(cert_path),
+                    )
+                    _LOGGER.debug(
+                        "negarb - debug something wrong",
+                        cert_path,
+                        os.path.exists(cert_path),
+                    )
+                    _LOGGER.warning(
+                        "negarb - warning something wrong",
+                        cert_path,
+                        os.path.exists(cert_path),
+                    )
         except (IOError, ValueError, KeyError):
             if not has_logged_warning:
                 _LOGGER.warning(
