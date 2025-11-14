@@ -20,6 +20,7 @@ import logging
 import os
 import re
 import time
+import json
 from urllib.parse import urlparse
 
 from google.auth import environment_vars
@@ -74,15 +75,25 @@ def get_agent_identity_certificate_path():
     import json
 
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
-    print("negarbDebugging - cert config path: ", cert_config_path)
+    print(
+        "negarbDebugging - cert config path: ",
+        cert_config_path,
+        "exist: ",
+        os.path.exists(cert_path),
+    )
     if not cert_config_path:
         return None
 
     has_logged_warning = False
-    for interval in _POLLING_INTERVALS:
+    # for interval in _POLLING_INTERVALS:
+    for i in range(45):
         try:
             with open(cert_config_path, "r") as f:
                 cert_config = json.load(f)
+                print(
+                    f"negarbDebugging - cert_config content: {json.dumps(cert_config, indent=4)}"
+                )
+
                 cert_path = (
                     cert_config.get("cert_configs", {})
                     .get("workload", {})
@@ -93,7 +104,7 @@ def get_agent_identity_certificate_path():
                     return cert_path
                 else:
                     print(
-                        "negarbDebugging - error something wrong",
+                        "negarbDebugging - config file not there",
                         cert_path,
                         os.path.exists(cert_path),
                     )
@@ -114,7 +125,9 @@ def get_agent_identity_certificate_path():
         # 2. The config file is found, but the certificate is not yet available.
         # In both cases, we need to poll, so we sleep on every iteration
         # that doesn't return a certificate.
-        time.sleep(interval)
+        # time.sleep(interval)
+        print("negarbDebugging time before sleep: ", time.strptime())
+        time.sleep(i)
 
     raise exceptions.RefreshError(
         " negarbDebugging Certificate config or certificate file not found after multiple retries. "
