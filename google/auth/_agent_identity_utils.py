@@ -72,17 +72,23 @@ def get_agent_identity_certificate_path():
     """
     import json
 
-    print("NEGARBDEBUGGING - in get path")
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
+    print("NEGARBDEBUGGING - in get path, cert_config_path: ", cert_config_path)
     if not cert_config_path:
         return None
-
+    print(
+        "NEGARBDEBUGGING - cert_config_path was set and path exists: ",
+        os.path.exists(cert_config_path),
+    )
     has_logged_warning = False
 
-    for interval in _POLLING_INTERVALS:
+    for i in range(3):
         try:
             with open(cert_config_path, "r") as f:
                 cert_config = json.load(f)
+                print(
+                    f"negarbDebugging - cert_config content: {json.dumps(cert_config, indent=4)}"
+                )
                 cert_path = (
                     cert_config.get("cert_configs", {})
                     .get("workload", {})
@@ -107,7 +113,7 @@ def get_agent_identity_certificate_path():
         # 2. The config file is found, but the certificate is not yet available.
         # In both cases, we need to poll, so we sleep on every iteration
         # that doesn't return a certificate.
-        time.sleep(interval)
+        time.sleep(10)
 
     raise exceptions.RefreshError(
         "NEGARBDEBUGGING Certificate config or certificate file not found after multiple retries. "
