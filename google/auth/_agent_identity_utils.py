@@ -73,7 +73,7 @@ def get_agent_identity_certificate_path():
     import json
 
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
-    print("NEGARBDEBUGGING - in get path, cert_config_path: ", cert_config_path)
+    print("NEGARBDEBUGGINGV2 - in get path, cert_config_path: ", cert_config_path)
     if not cert_config_path:
         return None
     print(
