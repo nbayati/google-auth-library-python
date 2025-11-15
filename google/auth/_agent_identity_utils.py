@@ -72,6 +72,7 @@ def get_agent_identity_certificate_path():
     """
     import json
 
+    print("NEGARBDEBUGGING - in get path")
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
     if not cert_config_path:
         return None
@@ -109,7 +110,7 @@ def get_agent_identity_certificate_path():
         time.sleep(interval)
 
     raise exceptions.RefreshError(
-        "Certificate config or certificate file not found after multiple retries. "
+        "NEGARBDEBUGGING Certificate config or certificate file not found after multiple retries. "
         f"Token binding protection is failing. You can turn off this protection by setting "
         f"{environment_vars.GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES} to false "
         "to fall back to unbound tokens."
