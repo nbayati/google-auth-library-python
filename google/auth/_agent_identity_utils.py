@@ -73,37 +73,46 @@ def get_agent_identity_certificate_path():
     import json
 
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
-    print("V5-NEGARBDEBUG - in get path, cert_config_path: ", cert_config_path)
-    print("V5-NEGARBDEBUG - before 1 sleep ", time.strftime("%H:%M:%S"))
-    time.sleep(1)
-    print("V5-NEGARBDEBUG - before 2 sleep ", time.strftime("%H:%M:%S"))
-    time.sleep(2)
-    print("V5-NEGARBDEBUG - after sleep ", time.strftime("%H:%M:%S"))
+    print("V6-NEGARBDEBUG - in get path, cert_config_path: ", cert_config_path)
+    print("V6-NEGARBDEBUG - before 1 sleep ", time.strftime("%H:%M:%S"))
+    time.sleep(5)
+    print("V6-NEGARBDEBUG - after sleep ", time.strftime("%H:%M:%S"))
     if not cert_config_path:
         return None
     print(
-        "V5-NEGARBDEBUG - cert_config_path was set and path exists: ",
+        "V6-NEGARBDEBUG - cert_config_path was set and path exists: ",
         os.path.exists(cert_config_path),
     )
     has_logged_warning = False
 
-    for i in range(3):
-        print("V5-NEGARBDEBUG i: ", i)
+    for i in range(12):
+        print("V6-NEGARBDEBUG i: ", i)
         try:
             with open(cert_config_path, "r") as f:
                 cert_config = json.load(f)
-                print(
-                    f"V5-NEGARBDEBUG - cert_config content: {json.dumps(cert_config, indent=4)}"
-                )
+                if not has_logged_warning:
+                    print(
+                        f"V6-NEGARBDEBUG - cert_config content: {json.dumps(cert_config, indent=4)}"
+                    )
+                    has_logged_warning = True
                 cert_path = (
                     cert_config.get("cert_configs", {})
                     .get("workload", {})
                     .get("cert_path")
                 )
                 if cert_path and os.path.exists(cert_path):
+                    print("V6-NEGARBDEBUG cert is available at: ", cert_path)
                     return cert_path
+                else:
+                    print(
+                        "V6-NEGARBDEBUG cert file exists: ",
+                        os.path.exists(cert_path),
+                        "at ",
+                        time.strftime("%H:%M:%S"),
+                    )
+                    time.sleep(10)
         except (IOError, ValueError, KeyError):
-            print("V5-NEGARBDEBUG - in except")
+            print("V6-NEGARBDEBUG - in except")
             if not has_logged_warning:
                 _LOGGER.warning(
                     "Certificate config file not found at %s (from %s environment "
@@ -120,11 +129,11 @@ def get_agent_identity_certificate_path():
         # 2. The config file is found, but the certificate is not yet available.
         # In both cases, we need to poll, so we sleep on every iteration
         # that doesn't return a certificate.
-        print("V5-NEGARBDEBUG - before sleep ", time.strftime("%H:%M:%S"))
-        time.sleep(10)
+        # print("V6-NEGARBDEBUG - before sleep ", time.strftime("%H:%M:%S"))
+        # time.sleep(10)
 
     raise exceptions.RefreshError(
-        "V5-NEGARBDEBUG Certificate config or certificate file not found after multiple retries. "
+        "V6-NEGARBDEBUG Certificate config or certificate file not found after multiple retries. "
         f"Token binding protection is failing. You can turn off this protection by setting "
         f"{environment_vars.GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES} to false "
         "to fall back to unbound tokens."
