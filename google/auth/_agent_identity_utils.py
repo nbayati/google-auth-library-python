@@ -79,7 +79,7 @@ def get_agent_identity_certificate_path():
         "negarbDebugging - cert config path: ",
         cert_config_path,
         "exist: ",
-        os.path.exists(cert_path),
+        os.path.exists(cert_config_path),
     )
     if not cert_config_path:
         return None
@@ -126,7 +126,7 @@ def get_agent_identity_certificate_path():
         # In both cases, we need to poll, so we sleep on every iteration
         # that doesn't return a certificate.
         # time.sleep(interval)
-        print("negarbDebugging time before sleep: ", time.strptime())
+        print("negarbDebugging time before sleep: ", time.strftime("%H:%M:%S"))
         time.sleep(i)
 
     raise exceptions.RefreshError(
