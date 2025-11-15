@@ -73,21 +73,22 @@ def get_agent_identity_certificate_path():
     import json
 
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
-    print("NEGARBDEBUGGINGV2 - in get path, cert_config_path: ", cert_config_path)
+    print("NEGARBDEBUGGINGV3 - in get path, cert_config_path: ", cert_config_path)
     if not cert_config_path:
         return None
     print(
-        "NEGARBDEBUGGING - cert_config_path was set and path exists: ",
+        "NEGARBDEBUGGINGV3 - cert_config_path was set and path exists: ",
         os.path.exists(cert_config_path),
     )
     has_logged_warning = False
 
     for i in range(3):
+        print("NEGARBDEBUGGINGV3 i: ", i)
         try:
             with open(cert_config_path, "r") as f:
                 cert_config = json.load(f)
                 print(
-                    f"negarbDebugging - cert_config content: {json.dumps(cert_config, indent=4)}"
+                    f"NEGARBDEBUGGINGV3 - cert_config content: {json.dumps(cert_config, indent=4)}"
                 )
                 cert_path = (
                     cert_config.get("cert_configs", {})
@@ -97,6 +98,7 @@ def get_agent_identity_certificate_path():
                 if cert_path and os.path.exists(cert_path):
                     return cert_path
         except (IOError, ValueError, KeyError):
+            print("NEGARBDEBUGGINGV3 - in except")
             if not has_logged_warning:
                 _LOGGER.warning(
                     "Certificate config file not found at %s (from %s environment "
@@ -106,7 +108,7 @@ def get_agent_identity_certificate_path():
                     _TOTAL_TIMEOUT,
                 )
                 has_logged_warning = True
-            pass
+            # pass
 
         # A sleep is required in two cases:
         # 1. The config file is not found (the except block).
@@ -116,7 +118,7 @@ def get_agent_identity_certificate_path():
         time.sleep(10)
 
     raise exceptions.RefreshError(
-        "NEGARBDEBUGGING Certificate config or certificate file not found after multiple retries. "
+        "NEGARBDEBUGGINGV3 Certificate config or certificate file not found after multiple retries. "
         f"Token binding protection is failing. You can turn off this protection by setting "
         f"{environment_vars.GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES} to false "
         "to fall back to unbound tokens."
