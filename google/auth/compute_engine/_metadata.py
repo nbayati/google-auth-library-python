@@ -368,17 +368,27 @@ def get_service_account_token(request, service_account="default", scopes=None):
             scopes = ",".join(scopes)
         params["scopes"] = scopes
 
+    print("[SDK_AI_DEBUG] Checking for agent identity certificate...")
     cert = _agent_identity_utils.get_and_parse_agent_identity_certificate()
+    print(f"[SDK_AI_DEBUG] Certificate found: {cert is not None}")
     if cert:
+        print("[SDK_AI_DEBUG] Checking if a bound token should be requested...")
         if _agent_identity_utils.should_request_bound_token(cert):
+            print("[SDK_AI_DEBUG] Requesting a bound token.")
             fingerprint = _agent_identity_utils.calculate_certificate_fingerprint(cert)
+            print(f"[SDK_AI_DEBUG] Using certificate fingerprint: {fingerprint}")
             params["bindCertificateFingerprint"] = fingerprint
+        else:
+            print(
+                "[SDK_AI_DEBUG] Not an agent identity certificate or opted out, requesting a regular token."
+            )
 
     metrics_header = {
         metrics.API_CLIENT_HEADER: metrics.token_request_access_token_mds()
     }
 
     path = "instance/service-accounts/{0}/token".format(service_account)
+    print(f"[SDK_AI_DEBUG] Requesting token with params: {params}")
     token_json = get(request, path, params=params, headers=metrics_header)
     token_expiry = _helpers.utcnow() + datetime.timedelta(
         seconds=token_json["expires_in"]

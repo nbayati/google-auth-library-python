@@ -81,6 +81,7 @@ def get_agent_identity_certificate_path():
 
     cert_config_path = os.environ.get(environment_vars.GOOGLE_API_CERTIFICATE_CONFIG)
     if not cert_config_path:
+        print("[SDK_AI_DEBUG] No certificate config path found.")
         return None
 
     has_logged_warning = False
@@ -95,6 +96,9 @@ def get_agent_identity_certificate_path():
                     .get("cert_path")
                 )
                 if _is_certificate_file_ready(cert_path):
+                    print(
+                        f"[SDK_AI_DEBUG] Found valid certificate at configured path: {cert_path}"
+                    )
                     return cert_path
         except (IOError, ValueError, KeyError):
             if not has_logged_warning:
@@ -110,6 +114,9 @@ def get_agent_identity_certificate_path():
 
         # As a fallback, check the well-known certificate path.
         if _is_certificate_file_ready(_WELL_KNOWN_CERT_PATH):
+            print(
+                f"[SDK_AI_DEBUG] Found valid certificate at well-known path: {_WELL_KNOWN_CERT_PATH}"
+            )
             return _WELL_KNOWN_CERT_PATH
 
         # A sleep is required in two cases:
@@ -119,6 +126,7 @@ def get_agent_identity_certificate_path():
         # that doesn't return a certificate.
         time.sleep(interval)
 
+    print("[SDK_AI_DEBUG] Failed to find agent identity certificate after timeout.")
     raise exceptions.RefreshError(
         "Certificate config or certificate file not found after multiple retries. "
         f"Token binding protection is failing. You can turn off this protection by setting "
@@ -146,10 +154,12 @@ def get_and_parse_agent_identity_certificate():
         == "false"
     )
     if is_opted_out:
+        print("[SDK_AI_DEBUG] User has opted out of bound tokens.")
         return None
 
     cert_path = get_agent_identity_certificate_path()
     if not cert_path:
+        print("[SDK_AI_DEBUG] Agent identity certificate path not found.")
         return None
 
     with open(cert_path, "rb") as cert_file:
@@ -188,6 +198,7 @@ def _is_agent_identity_certificate(cert):
         bool: True if the certificate is an Agent Identity certificate,
             False otherwise.
     """
+    print("[SDK_AI_DEBUG] Checking if certificate is an agent identity certificate...")
     try:
         from cryptography import x509
         from cryptography.x509.oid import ExtensionOID
@@ -197,6 +208,9 @@ def _is_agent_identity_certificate(cert):
                 ExtensionOID.SUBJECT_ALTERNATIVE_NAME
             )
         except x509.ExtensionNotFound:
+            print(
+                "[SDK_AI_DEBUG] Is agent identity certificate: False (no SAN extension)"
+            )
             return False
         uris = ext.value.get_values_for_type(x509.UniformResourceIdentifier)
 
@@ -206,7 +220,11 @@ def _is_agent_identity_certificate(cert):
                 trust_domain = parsed_uri.netloc
                 for pattern in _AGENT_IDENTITY_SPIFFE_TRUST_DOMAIN_PATTERNS:
                     if re.match(pattern, trust_domain):
+                        print("[SDK_AI_DEBUG] Is agent identity certificate: True")
                         return True
+        print(
+            "[SDK_AI_DEBUG] Is agent identity certificate: False (no matching SPIFFE URI)"
+        )
         return False
     except ImportError as e:
         raise ImportError(CRYPTOGRAPHY_NOT_FOUND_ERROR) from e
@@ -243,6 +261,7 @@ def should_request_bound_token(cert):
     Returns:
         bool: True if a bound token should be requested, False otherwise.
     """
+    print("[SDK_AI_DEBUG] Checking should_request_bound_token...")
     is_agent_cert = _is_agent_identity_certificate(cert)
     is_opted_in = (
         os.environ.get(
@@ -251,4 +270,5 @@ def should_request_bound_token(cert):
         ).lower()
         == "true"
     )
+    print(f"[SDK_AI_DEBUG] Is agent cert: {is_agent_cert}, Is opted in: {is_opted_in}")
     return is_agent_cert and is_opted_in
