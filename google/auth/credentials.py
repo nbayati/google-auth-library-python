@@ -184,6 +184,7 @@ class Credentials(_BaseCredentials):
         """
         self._apply(headers, token)
         if self.quota_project_id:
+            print(f"SDK_AI_DEBUG Adding x-goog-user-project header: {self.quota_project_id}")
             headers["x-goog-user-project"] = self.quota_project_id
 
     def _blocking_refresh(self, request):
@@ -250,9 +251,12 @@ class CredentialsWithQuotaProject(Credentials):
         raise NotImplementedError("This credential does not support quota project.")
 
     def with_quota_project_from_environment(self):
+        print("SDK_AI_DEBUG Checking for GOOGLE_CLOUD_QUOTA_PROJECT environment variable...")
         quota_from_env = os.environ.get(environment_vars.GOOGLE_CLOUD_QUOTA_PROJECT)
         if quota_from_env:
+            print(f"SDK_AI_DEBUG Found GOOGLE_CLOUD_QUOTA_PROJECT: {quota_from_env}")
             return self.with_quota_project(quota_from_env)
+        print("SDK_AI_DEBUG GOOGLE_CLOUD_QUOTA_PROJECT not set.")
         return self
 
 

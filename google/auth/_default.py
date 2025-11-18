@@ -572,6 +572,7 @@ def get_api_key_credentials(key):
 
 
 def _apply_quota_project_id(credentials, quota_project_id):
+    print(f"SDK_AI_DEBUG Applying quota project ID. Explicitly passed: {quota_project_id}")
     if quota_project_id:
         credentials = credentials.with_quota_project(quota_project_id)
     else:
@@ -583,6 +584,8 @@ def _apply_quota_project_id(credentials, quota_project_id):
         not credentials.quota_project_id
     ):
         _warn_about_problematic_credentials(credentials)
+    
+    print(f"SDK_AI_DEBUG Final quota project ID on credentials: {credentials.quota_project_id}")
     return credentials
 
 
