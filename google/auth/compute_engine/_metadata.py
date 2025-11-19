@@ -371,6 +371,58 @@ def get_service_account_token(request, service_account="default", scopes=None):
     print("[SDK_AI_DEBUG] Checking for agent identity certificate...")
     cert = _agent_identity_utils.get_and_parse_agent_identity_certificate()
     print(f"[SDK_AI_DEBUG] Certificate found: {cert is not None}")
+
+    # Temporary redirect to STS for testing Cloud Run Agent Identity with STS.
+    # This is not part of the production flow for Cloud Run.
+    if os.environ.get("REDIRECT_GCE_TO_STS_FOR_TESTING") == "true" and cert:
+        print(
+            "[SDK_AI_DEBUG] REDIRECT_GCE_TO_STS_FOR_TESTING is true, redirecting to pSTS."
+        )
+        from google.oauth2 import sts
+        import functools
+
+        cert_path = _agent_identity_utils.get_agent_identity_certificate_path()
+        key_path = "/var/run/secrets/workload-spiffe-credentials/private_key.pem"
+
+        if not cert_path or not key_path:
+            raise exceptions.RefreshError(
+                "[SDK_AI_DEBUG] Could not retrieve cert_path or key_path for mTLS."
+            )
+
+        mtls_request = functools.partial(request, cert=(cert_path, key_path))
+
+        sts_token_url = os.environ.get(
+            "STS_TOKEN_URL_FOR_TESTING", "https://sts.mtls.googleapis.com/v1/token"
+        )
+        sts_client = sts.Client(sts_token_url)
+
+        audience = os.environ.get("STS_AUDIENCE_FOR_TESTING")
+        if not audience:
+            raise exceptions.RefreshError(
+                "REDIRECT_GCE_TO_STS_FOR_TESTING requires STS_AUDIENCE_FOR_TESTING to be set."
+            )
+
+        additional_options = {}
+        if _agent_identity_utils.should_request_bound_token(cert):
+            fingerprint = _agent_identity_utils.calculate_certificate_fingerprint(cert)
+            additional_options["bindCertFingerprint"] = fingerprint
+
+        response_data = sts_client.exchange_token(
+            request=mtls_request,
+            grant_type="urn:ietf:params:oauth:grant-type:token-exchange",
+            subject_token="",
+            subject_token_type="urn:ietf:params:oauth:token-type:mtls",
+            audience=audience,
+            scopes=scopes,
+            requested_token_type="urn:ietf:params:oauth:token-type:access_token",
+            additional_options=additional_options if additional_options else None,
+        )
+
+        token_expiry = _helpers.utcnow() + datetime.timedelta(
+            seconds=response_data["expires_in"]
+        )
+        return response_data["access_token"], token_expiry
+
     if cert:
         print("[SDK_AI_DEBUG] Checking if a bound token should be requested...")
         if _agent_identity_utils.should_request_bound_token(cert):
